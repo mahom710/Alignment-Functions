@@ -3,10 +3,14 @@
 ########################
 library(Biostrings)
 
+# add some timer to benchmarking
 
-## Define input sequences
-x <- "FIPFSAGPRNCIGQK"
-y <- "PFGFGKRSCMGRRLA"
+## Define input sequences (by axis in matrix)
+#x <- "FIPFSAGPRNCIGQK" 
+x <- "HEAGAWGHEE"
+#y <- "PFGFGKRSCMGRRLA" 
+y <- "PAWHEAE"
+
 
 ## Vectorize input sequences
 x <- substring(x, 1:nchar(x), 1:nchar(x))
@@ -22,14 +26,12 @@ ma <- matrix(NA, length(y)+1, length(x)+1, dimnames=list(c("gp", y), c("gp", x))
 ma[1,] <- seq(0, -(length(ma[1,])-1) * gp, -gp)
 ma[,1] <- seq(0, -(length(ma[,1])-1) * gp, -gp)
 
-#Create second identical matrix that will store the coordinates of where each data point points
+#Create second identical matrix that will store the coordinates of where each data point points. (note) that the first col and row should be empty so that the indices of the ma nad indexMa match
 indexMa <- matrix(list(NA), length(y)+1, length(x)+1, dimnames=list(c("gp", y), c("gp", x)))
-#indexMa[1, 1] <- list(c(1, 2))  # this is an example of how to store a cord
-# note that the first col and row should be empty so that the indices of the ma nad indexMa match
 
-#Solve of each index
-for (i in 2:(length(x)+1)){
-  for (j in 2:(length(y)+1)) {
+#Solve of each index (currently failing if there are string are different lengths) 
+for (i in 2:(length(y)+1)){
+  for (j in 2:(length(x)+1)) {
     
     #substitution penalty             
     aminoX <- colnames(ma)[j] 
@@ -57,13 +59,14 @@ for (i in 2:(length(x)+1)){
     }
     
   }
+  
   #I could improve this part by storing the direction in the index matrix instead of the coordinates.
   #For example, the im1jm1 in the above "if else" loop could just store the direction (diag) and we could
   #cut out the entire "checking to see where the current index points" part into just looking for the direction.
   
 }
 
-#fix the first row and column points for the index matrix
+#fix the first row and column points for the index matrix (fix by pointers)
 indexMa[1,1] <- list(c(0,0))
 for (i in 1:length(x)){
   indexMa[1,i+1] = list(c(1,i))
@@ -73,7 +76,7 @@ for (i in 1:length(y)){
 }
 
 # Alignment
-curindex <- c(length(x)+1, length(y)+1)
+curindex <- c(length(y)+1, length(x)+1)
 xalign <- c()
 yalign <- c()
 
