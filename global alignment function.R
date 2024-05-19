@@ -1,24 +1,36 @@
 ########################
 ## # Global Alignment ##
 ########################
+
+GlobalAlign <- function(FirstSequence, SecondSequence, GapPenalty, LevelOfSimilarity, returnMatrices){
+  
+  #can add a feature of input for sequences (like fastq, string)
 library(Biostrings)
 
 # add some timer to benchmarking
+start_time <- Sys.time()
 
 ## Define input sequences (by axis in matrix)
-#x <- "FIPFSAGPRNCIGQK" 
-x <- "HEAGAWGHEE"
-#y <- "PFGFGKRSCMGRRLA" 
-y <- "PAWHEAE"
+#x <- "HEAGAWGHEE"
+#y <- "PAWHEAE"
 
+x <- FirstSequence; y <- SecondSequence
+  
 
 ## Vectorize input sequences
 x <- substring(x, 1:nchar(x), 1:nchar(x))
 y <- substring(y, 1:nchar(y), 1:nchar(y))
 
 ## Define gap penality and sub matrix
-gp <- 8 # Gap penalty
-data("BLOSUM50"); subm <- BLOSUM50 
+gp <- GapPenalty #gp <- 8 # Gap penalty
+
+if(LevelOfSimilarity == "low"){
+  data("BLOSUM50"); subm <- BLOSUM50 
+} else if (LevelOfSimilarity == "moderate"){
+  data("BLOSUM62"); subm <- BLOSUM62
+} else if (LevelOfSimilarity == "high"){
+  data("BLOSUM80"); subm <- BLOSUM80
+}
 
 
 ## Create dynamic programming matrix based on x, y and gp
@@ -35,7 +47,7 @@ for (i in 2:(length(y)+1)){
     
     #substitution penalty             
     aminoX <- colnames(ma)[j] 
-    index_position_blosum_i <- grep(aminoX,row.names(subm))
+    index_position_blosum_i <- grep(aminoX,row.names(subm)) #do this outside the loop
     aminoY <- row.names(ma)[i]
     index_position_blosum_j <- grep(aminoY,colnames(subm))
     sub_pen <- subm[index_position_blosum_i, index_position_blosum_j]
@@ -51,70 +63,67 @@ for (i in 2:(length(y)+1)){
     
     #stores the cords of where the max score came from
     if(maxscore == im1jm1){
-      indexMa[i,j] <- list(c(i-1,j-1))
+      indexMa[i,j] <- "diag"
     } else if (maxscore == im1j){
-      indexMa[i,j] <- list(c(i-1,j))
+      indexMa[i,j] <- "up"
     } else {
-      indexMa[i,j] <- list(c(i,j-1))
+      indexMa[i,j] <- "left"
     }
     
   }
   
-  #I could improve this part by storing the direction in the index matrix instead of the coordinates.
-  #For example, the im1jm1 in the above "if else" loop could just store the direction (diag) and we could
-  #cut out the entire "checking to see where the current index points" part into just looking for the direction.
-  
 }
 
 #fix the first row and column points for the index matrix (fix by pointers)
-indexMa[1,1] <- list(c(0,0))
+indexMa[1,1] <- "END"
 for (i in 1:length(x)){
-  indexMa[1,i+1] = list(c(1,i))
+  indexMa[1,i+1] = "left"
 }
 for (i in 1:length(y)){
-  indexMa[i+1] = list(c(i,1))
+  indexMa[i+1] = "up"
 }
 
 # Alignment
 curindex <- c(length(y)+1, length(x)+1)
+finalscore <- ma[curindex[1],curindex[2]]
 xalign <- c()
 yalign <- c()
 
 #tracing back through the matrix until it reaches the 1,1
-while (!identical(curindex,c(1,1))) {
+while (indexMa[curindex[1],curindex[2]] != "END") {
   
-  #checking to see where the current index points
-  up <- unlist(indexMa[curindex[1], curindex[2]]) == c(curindex[1]-1,curindex[2]) #tells if the arrow points up
-  left <- unlist(indexMa[curindex[1], curindex[2]]) == c(curindex[1],curindex[2]-1) #tells if the arrow points left
-  diag <- unlist(indexMa[curindex[1], curindex[2]]) == c(curindex[1]-1,curindex[2]-1) #tells if the arrow points diag
-  
+  pointer <- unlist(indexMa[curindex[1],curindex[2]])
   #create a string for the alignments and update the current index
-  if(all(up)){
+  if(pointer == "up"){
     yalign <- paste0(row.names(ma)[curindex[1]],yalign)
     xalign <- paste0("-", xalign)
     curindex <- c(curindex[1]-1,curindex[2])
-  } else if(all(left)){
+  } else if(pointer == "left"){
     yalign <- paste0("-", yalign)
     xalign <- paste0(colnames(ma)[curindex[2]], xalign)
     curindex <- c(curindex[1],curindex[2]-1)
-  } else if(all(diag)){
+  } else if(pointer == "diag"){
     yalign <- paste0(row.names(ma)[curindex[1]], yalign)
     xalign <- paste0(colnames(ma)[curindex[2]], xalign)
     curindex <- c(curindex[1]-1,curindex[2]-1)
   } 
   
-  
 }
 
-print(xalign)
-print(yalign)
+# end benchmark
+end_time <- Sys.time()
+time_taken <- end_time - start_time
+print(time_taken)
 
+print(paste0("Seq1:",xalign))
+print(paste0("Seq2:",yalign))
+print(paste0("Final Score:", finalscore))
 
-## If desired, write ma to tabular file and upload it to Google Sheets 
-write.table(ma, file="ma.xls", quote=FALSE, na = "", col.names = NA, sep="\t")
+if (returnMatrices == TRUE){
+  return(list(ma,indexMa))
+}
 
-seq
-
+}
 
 
 
