@@ -43,13 +43,14 @@ indexMa <- matrix(list(NA), length(y)+1, length(x)+1, dimnames=list(c("gp", y), 
 
 #Solve of each index (currently failing if there are string are different lengths) 
 for (i in 2:(length(y)+1)){
+  aminoY <- row.names(ma)[i]
+  index_position_blosum_i <- grep(aminoY,colnames(subm))
   for (j in 2:(length(x)+1)) {
     
     #substitution penalty             
     aminoX <- colnames(ma)[j] 
-    index_position_blosum_i <- grep(aminoX,row.names(subm)) #do this outside the loop
-    aminoY <- row.names(ma)[i]
-    index_position_blosum_j <- grep(aminoY,colnames(subm))
+    index_position_blosum_j <- grep(aminoX,row.names(subm)) #do this outside the loop
+
     sub_pen <- subm[index_position_blosum_i, index_position_blosum_j]
     im1jm1 <- ma[i-1,j-1] + sub_pen
     
