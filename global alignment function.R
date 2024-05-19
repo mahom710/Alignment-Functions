@@ -18,8 +18,8 @@ x <- FirstSequence; y <- SecondSequence
   
 
 ## Vectorize input sequences
-x <- substring(x, 1:nchar(x), 1:nchar(x))
-y <- substring(y, 1:nchar(y), 1:nchar(y))
+> x <- unlist(strsplit(x, split = ""))
+> y <- unlist(strsplit(y, split = ""))
 
 ## Define gap penality and sub matrix
 gp <- GapPenalty #gp <- 8 # Gap penalty
@@ -43,15 +43,10 @@ indexMa <- matrix(list(NA), length(y)+1, length(x)+1, dimnames=list(c("gp", y), 
 
 #Solve of each index (currently failing if there are string are different lengths) 
 for (i in 2:(length(y)+1)){
-  aminoY <- row.names(ma)[i]
-  index_position_blosum_i <- grep(aminoY,colnames(subm))
   for (j in 2:(length(x)+1)) {
     
     #substitution penalty             
-    aminoX <- colnames(ma)[j] 
-    index_position_blosum_j <- grep(aminoX,row.names(subm)) #do this outside the loop
-
-    sub_pen <- subm[index_position_blosum_i, index_position_blosum_j]
+    sub_pen <- as.numeric(subm[y[i-1],x[j-1]])
     im1jm1 <- ma[i-1,j-1] + sub_pen
     
     #gap penalties
