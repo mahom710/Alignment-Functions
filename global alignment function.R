@@ -10,19 +10,35 @@ library(Biostrings)
 # add some timer to benchmarking
 start_time <- Sys.time()
 
+# Possible Errors
+if (GapPenalty < 0) {
+  stop("Error: Gap penalty cannot be negative.")
+}
+only_allowed_characters <- function(x, allowed_characters) {
+  return(!grepl(paste0("[^ARNDCQEGHILKMFPSTWYVBX*]"), x))
+}
+if (!only_allowed_characters(x)){
+  stop("Error: Ensure first sequence is uppercase and proteins.")
+}
+if (!only_allowed_characters(y)){
+  stop("Error: Ensure second sequence is uppercase and proteins.")
+}
+if (x == ""){
+  stop("Error: First sequence is empty.")
+}
+if (y == ""){
+  stop("Error: Second sequence is empty.")
+}
+
 ## Define input sequences (by axis in matrix)
-#x <- "HEAGAWGHEE"
-#y <- "PAWHEAE"
+x <- FirstSequence; y <- SecondSequence #x <- "HEAGAWGHEE"; y <- "PAWHEAE"
 
-x <- FirstSequence; y <- SecondSequence
-  
-
-## Vectorize input sequences
-> x <- unlist(strsplit(x, split = ""))
-> y <- unlist(strsplit(y, split = ""))
+# Vectorize input sequences
+x <- unlist(strsplit(x, split = ""))
+y <- unlist(strsplit(y, split = ""))
 
 ## Define gap penality and sub matrix
-gp <- GapPenalty #gp <- 8 # Gap penalty
+gp <- GapPenalty 
 
 if(LevelOfSimilarity == "low"){
   data("BLOSUM50"); subm <- BLOSUM50 
@@ -32,7 +48,6 @@ if(LevelOfSimilarity == "low"){
   data("BLOSUM80"); subm <- BLOSUM80
 }
 
-
 ## Create dynamic programming matrix based on x, y and gp
 ma <- matrix(NA, length(y)+1, length(x)+1, dimnames=list(c("gp", y), c("gp", x)))
 ma[1,] <- seq(0, -(length(ma[1,])-1) * gp, -gp)
@@ -41,7 +56,7 @@ ma[,1] <- seq(0, -(length(ma[,1])-1) * gp, -gp)
 #Create second identical matrix that will store the coordinates of where each data point points. (note) that the first col and row should be empty so that the indices of the ma nad indexMa match
 indexMa <- matrix(list(NA), length(y)+1, length(x)+1, dimnames=list(c("gp", y), c("gp", x)))
 
-#Solve of each index (currently failing if there are string are different lengths) 
+#Solve of each index 
 for (i in 2:(length(y)+1)){
   for (j in 2:(length(x)+1)) {
     
@@ -65,9 +80,7 @@ for (i in 2:(length(y)+1)){
     } else {
       indexMa[i,j] <- "left"
     }
-    
   }
-  
 }
 
 #fix the first row and column points for the index matrix (fix by pointers)
